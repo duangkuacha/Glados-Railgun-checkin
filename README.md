@@ -74,6 +74,7 @@
 ## 问题排查与定位
 - 大家可以通过查询 actions 中的 running checkin 日志快速定位问题，有其他问题提交issue。
 - 若日志出现 `code : 4, message : Automated check-in detected`：这是 GLaDOS 的**设备平台校验**（`reason=device-mismatch`，即签到请求 UA 平台与登录设备平台不一致）。脚本已内置**设备平台自适应**：首次失败时自动读取服务端返回的 `loginDevice` 并切换对应平台 UA 重试，**无需手动配置 User-Agent**；若长期仍失败，请重新登录 glados.cloud 手动签到一次并刷新 cookie。
+- 新版站点使用不同的会话 Cookie：GLaDOS 使用 `gld:sess` / `gld:sess.sig`，Railgun 使用 `koa:sess` / `koa:sess.sig`。脚本会按前缀把 Cookie 路由到对应域名；同时使用两个站点时，在 `GLADOS_COOKIES` 中同时填写两组 Cookie，并用 `&` 分隔不同账号。
 
   <img width="1684" height="844" alt="image" src="https://github.com/user-attachments/assets/45348a5f-43e4-45f5-8fdf-ce84d343b30d" />
 

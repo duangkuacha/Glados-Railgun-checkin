@@ -111,6 +111,12 @@ class Config:
     """默认域名"""
     DOMAINS = ["glados.cloud", "railgun.info"]
 
+    """新旧站点使用不同的会话 Cookie 前缀。"""
+    DOMAIN_COOKIE_NAMES = {
+        "glados.cloud": ("gld:sess", "gld:sess.sig"),
+        "railgun.info": ("koa:sess", "koa:sess.sig"),
+    }
+
     """兑换计划列表"""
     EXCHANGE_PLANS = {
         ExchangePlan.PLAN100.value: 100,
@@ -486,23 +492,59 @@ class Checker:
         if self.config.verbose or force:
             logger.info(f"{LogEmoji.COOKIE}[{cookie_idx}] {LogEmoji.DOMAIN}[{domain}] {emoji} {message}")
 
+    def _domains_for_cookie(self, cookie: str) -> List[str]:
+        """根据 Cookie 前缀选择对应站点；无法识别时保留旧的全域名行为。"""
+        names = {
+            part.split("=", 1)[0].strip()
+            for part in cookie.split(";")
+            if "=" in part
+        }
+        known_names = set().union(*self.config.DOMAIN_COOKIE_NAMES.values()) if self.config.DOMAIN_COOKIE_NAMES else set()
+        if not names.intersection(known_names):
+            return list(self.config.DOMAINS)
+
+        return [
+            domain
+            for domain in self.config.DOMAINS
+            if names.intersection(self.config.DOMAIN_COOKIE_NAMES.get(domain, ()))
+        ]
+
+    def _cookie_for_domain(self, cookie: str, domain: str) -> str:
+        """只将当前站点对应的 gld/koa 会话 Cookie 发送给该站点。"""
+        names = self.config.DOMAIN_COOKIE_NAMES.get(domain, ())
+        if not names:
+            return cookie
+
+        parts = [part.strip() for part in cookie.split(";") if part.strip()]
+        if not any(part.split("=", 1)[0].strip() in names for part in parts if "=" in part):
+            return cookie
+
+        return "; ".join(
+            part for part in parts
+            if "=" in part and part.split("=", 1)[0].strip() in names
+        )
+
     def checkin_all(self):
         """执行所有签到任务"""
         cookie_count = len(self.config.cookies_list)
-        domain_count = len(self.config.DOMAINS)
-        total_tasks = cookie_count * domain_count
+        cookie_domains = {
+            cookie_idx: self._domains_for_cookie(cookie)
+            for cookie_idx, cookie in enumerate(self.config.cookies_list, 1)
+        }
+        total_tasks = sum(len(domains) for domains in cookie_domains.values())
         task_idx = 0
 
-        logger.info(f"{LogEmoji.INFO} 共 {cookie_count} 个 Cookie, {domain_count} 个域名, 共 {total_tasks} 个任务")
+        logger.info(f"{LogEmoji.INFO} 共 {cookie_count} 个 Cookie, 支持 {len(self.config.DOMAINS)} 个域名, 共 {total_tasks} 个任务")
 
         for cookie_idx, cookie in enumerate(self.config.cookies_list, 1):
             logger.info(f"{LogEmoji.START} ========== 开始处理 Cookie {cookie_idx} ==========")
 
-            for domain in self.config.DOMAINS:
+            for domain in cookie_domains[cookie_idx]:
                 task_idx += 1
+                domain_cookie = self._cookie_for_domain(cookie, domain)
                 logger.info(f"{LogEmoji.INFO} ----- 任务 {task_idx}/{total_tasks}: {LogEmoji.COOKIE}[{cookie_idx}] on {LogEmoji.DOMAIN}[{domain}] -----")
 
-                result = self._checkin_on_domain(cookie, cookie_idx, domain)
+                result = self._checkin_on_domain(domain_cookie, cookie_idx, domain)
                 self.results.append(result)
 
                 result_message = f"结果: {result.status}"
