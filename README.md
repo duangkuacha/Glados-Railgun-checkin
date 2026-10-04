@@ -26,13 +26,17 @@
 
 - 点击第一个选项卡后在`Request Headers`下找到`Cookie`，右键复制cookie的值即可
 
-  > 参考格式：koa:sess=eyJ1c2xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxAwMH0=; koa:sess.sig=xJkOxxxxxxxxxxxxxxxtnM;
+  > 参考格式：gld:sess=eyJ1c2xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxAwMH0=; gld:sess.sig=xJkOxxxxxxxxxxxxxxxtnM;
 
 ![图片加载失败](imgs/3.png)
 
 - 多账号请在 `COOKIES` 中 添加多个 `cookies` 中间使用 `&`连接即可。（例如： `c1&c3&c3...`）
 
-3. 配置积分兑换策略（非必须）
+3. Railgun 账号 Cookie（可选）
+
+如果需要同时为 Railgun 账号签到，新增一个 repository secret `RAILGUN_COOKIES`，填入 Railgun 页面获取的 `koa:sess=...; koa:sess.sig=...`。原有的 `GLADOS_COOKIES` 不需要修改；脚本会自动合并两个 Secret，并按 Cookie 前缀路由到对应站点。
+
+4. 配置积分兑换策略（非必须）
 
 - 添加1个`repository secret`，命名为`GLADOS_EXCHANGE_PLAN`，配置自动兑换积分策略：
 
@@ -44,7 +48,7 @@
 
 > 不配置时默认不进行自动兑换；如需兑换，设置 `GLADOS_EXCHANGE_PLAN` 为 `plan100` / `plan200` / `plan500`。
 
-4. 手机推送（非必须）
+5. 手机推送（非必须）
 
 - 添加1个`repository secret`，命名为`PUSHDEER_SENDKEY`，其值对应 PushDeer key: ([获取地址](https://www.pushdeer.com/product.html))。
 

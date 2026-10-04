@@ -99,6 +99,7 @@ class Config:
 
     ENV_PUSH_KEY = "PUSHDEER_SENDKEY"
     ENV_COOKIES = "GLADOS_COOKIES"
+    ENV_RAILGUN_COOKIES = "RAILGUN_COOKIES"
     ENV_EXCHANGE_PLAN = "GLADOS_EXCHANGE_PLAN"
     ENV_VERBOSE = "GLADOS_VERBOSE"
 
@@ -135,6 +136,7 @@ class Config:
         """加载配置"""
         push_key_env: Optional[str] = os.environ.get(self.ENV_PUSH_KEY)
         raw_cookies_env: Optional[str] = os.environ.get(self.ENV_COOKIES)
+        raw_railgun_cookies_env: Optional[str] = os.environ.get(self.ENV_RAILGUN_COOKIES)
         exchange_plan_env: Optional[str] = os.environ.get(self.ENV_EXCHANGE_PLAN)
         verbose_env: Optional[str] = os.environ.get(self.ENV_VERBOSE)
 
@@ -144,13 +146,20 @@ class Config:
         else:
             self.push_key = push_key_env
 
-        if not raw_cookies_env:
-            logger.warning(f"{LogEmoji.WARNING} 环境变量 '{self.ENV_COOKIES}' 未设置。")
-            self.cookies_list = []
-        else:
-            self.cookies_list = [cookie.strip() for cookie in raw_cookies_env.split("&") if cookie.strip()]
-            if not self.cookies_list:
-                raise ValueError(f"环境变量 '{self.ENV_COOKIES}' 已设置，但未包含任何有效的 Cookie。")
+        self.cookies_list = []
+        for env_name, raw_cookies in (
+            (self.ENV_COOKIES, raw_cookies_env),
+            (self.ENV_RAILGUN_COOKIES, raw_railgun_cookies_env),
+        ):
+            if raw_cookies:
+                self.cookies_list.extend(
+                    cookie.strip() for cookie in raw_cookies.split("&") if cookie.strip()
+                )
+            elif env_name == self.ENV_COOKIES:
+                logger.warning(f"{LogEmoji.WARNING} 环境变量 '{env_name}' 未设置。")
+
+        if not self.cookies_list:
+            logger.warning(f"{LogEmoji.WARNING} 未找到任何有效的 Cookie。")
 
         if not exchange_plan_env:
             logger.warning(f"{LogEmoji.WARNING} 环境变量 '{self.ENV_EXCHANGE_PLAN}' 未设置，将使用默认设置（不自动兑换）。")
@@ -165,6 +174,8 @@ class Config:
 
         logger.info(f"{LogEmoji.INFO} 共加载了 {len(self.cookies_list)} 个 Cookie 用于签到。")
         logger.info(f"{LogEmoji.INFO} 当前 {self.ENV_PUSH_KEY} {'已设置' if push_key_env else '未设置'}。")
+        logger.info(f"{LogEmoji.INFO} 当前 {self.ENV_COOKIES} {'已设置' if raw_cookies_env else '未设置'}。")
+        logger.info(f"{LogEmoji.INFO} 当前 {self.ENV_RAILGUN_COOKIES} {'已设置' if raw_railgun_cookies_env else '未设置'}。")
         logger.info(f"{LogEmoji.INFO} 当前 {self.ENV_EXCHANGE_PLAN}: {self.exchange_plan}。")
 
         if verbose_env is not None:
