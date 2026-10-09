@@ -254,10 +254,11 @@ class API:
         platform = "Windows"
         if self.domain == "glados.cloud":
             # 首次请求就使用登录设备，避免先触发设备告警再重试。
-            platform = os.environ.get("GLADOS_LOGIN_DEVICE", "macOS").strip() or "macOS"
+            platform = os.environ.get("GLADOS_LOGIN_DEVICE", "").strip()
             if platform not in PLATFORM_UA:
                 raise ValueError(
-                    "GLADOS_LOGIN_DEVICE 必须是 " + ", ".join(PLATFORM_UA)
+                    "请将 GLADOS_LOGIN_DEVICE 配置为 Cookie 的实际登录平台: "
+                    + ", ".join(PLATFORM_UA)
                 )
             self._log("info", LogEmoji.INFO, f"使用 GLaDOS 登录设备平台: {platform}", force=True)
         return {

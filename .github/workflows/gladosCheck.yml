@@ -51,7 +51,7 @@ jobs:
       env:
         PUSHDEER_SENDKEY: ${{ secrets.PUSHDEER_SENDKEY }}
         GLADOS_COOKIES: ${{ secrets.GLADOS_COOKIES }}
-        GLADOS_LOGIN_DEVICE: ${{ vars.GLADOS_LOGIN_DEVICE || 'macOS' }}
+        GLADOS_LOGIN_DEVICE: ${{ vars.GLADOS_LOGIN_DEVICE }}
         RAILGUN_COOKIES: ${{ secrets.RAILGUN_COOKIES }}
         GLADOS_EXCHANGE_PLAN: ${{ secrets.GLADOS_EXCHANGE_PLAN }}
         GLADOS_VERBOSE: ${{ secrets.GLADOS_VERBOSE }}
