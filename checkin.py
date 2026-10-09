@@ -251,9 +251,18 @@ class API:
 
     def _get_headers(self) -> Dict[str, str]:
         """获取请求头"""
+        platform = "Windows"
+        if self.domain == "glados.cloud":
+            # 首次请求就使用登录设备，避免先触发设备告警再重试。
+            platform = os.environ.get("GLADOS_LOGIN_DEVICE", "macOS").strip() or "macOS"
+            if platform not in PLATFORM_UA:
+                raise ValueError(
+                    "GLADOS_LOGIN_DEVICE 必须是 " + ", ".join(PLATFORM_UA)
+                )
+            self._log("info", LogEmoji.INFO, f"使用 GLaDOS 登录设备平台: {platform}", force=True)
         return {
             "origin": f"https://{self.domain}",
-            "user-agent": PLATFORM_UA["Windows"],
+            "user-agent": PLATFORM_UA[platform],
         }
 
     def _log(self, level: str, emoji: str, message: str, force: bool = False) -> None:
